@@ -21,27 +21,64 @@ module.exports = randomPointInPoly = function(bg_json){
         })
 
         bg_json.forEach(function(feature){
-            feature.geometry.coordinates.forEach(function (item,index) {
-                var line = turf.lineString(item);
-                var bbox = turf.bbox(line);
-                var poly = turf.multiPolygon([item],{name: 'Polygon'})
-                var count = 0
-                while(count < feature.properties.POPULATION){
-                    var points = turf.randomPoint(feature.properties.POPULATION, {bbox: bbox})
-                    Object.values(points.features).forEach(function (each_point,index) {
-                        point = each_point
-                        each_point.properties['GEOID'] = feature.properties.GEOID
-                        inside = turf_inside(point,poly)
-                        if (inside) {
-                            if (count < feature.properties.POPULATION ){
-                                each_point.properties['i'] = count+1
-                                updated_geojson.features.push(each_point);
-                                count = count+1
-                            }
+            if (feature.geometry.type === 'MultiPolygon') {
+                console.log(' if multiPolygon True')
+                for (var i = 0; i < feature.geometry.coordinates.length; i++) {
+                    var polygon = {
+                        'type': 'Polygon',
+                        'coordinates': feature.geometry.coordinates[i],
+                        'properties': feature.properties
+                    }
+                    polygon.coordinates.forEach(function(coordinate,index){
+                        var line = turf.lineString(coordinate);
+                        var bbox = turf.bbox(line);
+                        var poly = turf.multiPolygon([coordinate], {name: 'Polygon'})
+                        var count = 0
+                        while (count < feature.properties.POPULATION) {
+                            var points = turf.randomPoint(feature.properties.POPULATION, {bbox: bbox})
+                            Object.values(points.features).forEach(function (each_point, index) {
+                                point = each_point
+                                each_point.properties['GEOID'] = feature.properties.GEOID
+                                inside = turf_inside(point, poly)
+                                if (inside) {
+                                    if (count < feature.properties.POPULATION) {
+                                        each_point.properties['i'] = count + 1
+                                        updated_geojson.features.push(each_point);
+                                        count = count + 1
+                                    }
+                                }
+                            })
                         }
                     })
+
+
                 }
-            })
+            }
+            else{
+                console.log('if multipolygon false')
+                feature.geometry.coordinates.forEach(function (item,index) {
+                    var line = turf.lineString(item);
+                    var bbox = turf.bbox(line);
+                    var poly = turf.polygon([item],{name: 'Polygon'})
+                    var count = 0
+                    while(count < feature.properties.POPULATION){
+                        var points = turf.randomPoint(feature.properties.POPULATION, {bbox: bbox})
+                        Object.values(points.features).forEach(function (each_point,index) {
+                            point = each_point
+                            each_point.properties['GEOID'] = feature.properties.GEOID
+                            inside = turf_inside(point,poly)
+                            if (inside) {
+                                if (count < feature.properties.POPULATION ){
+                                    each_point.properties['i'] = count+1
+                                    updated_geojson.features.push(each_point);
+                                    count = count+1
+                                }
+                            }
+                        })
+                    }
+                })
+            }
+
 
         })
     return updated_geojson
