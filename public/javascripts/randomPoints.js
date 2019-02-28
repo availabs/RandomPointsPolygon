@@ -8,7 +8,7 @@ var updated_geojson = {
            type: 'FeatureCollection',
             features : []
 }
-
+var wstream = fs.createWriteStream('ny_whole.geojson');
 module.exports = randomPointInPoly = function(bg_json){
         bg_json.forEach(function(block_feature,index) {
             if(index <= (bg_json.length-2)) {
@@ -22,7 +22,6 @@ module.exports = randomPointInPoly = function(bg_json){
 
         bg_json.forEach(function(feature){
             if (feature.geometry.type === 'MultiPolygon') {
-                console.log(' if multiPolygon True')
                 for (var i = 0; i < feature.geometry.coordinates.length; i++) {
                     var polygon = {
                         'type': 'Polygon',
@@ -32,8 +31,9 @@ module.exports = randomPointInPoly = function(bg_json){
                     polygon.coordinates.forEach(function(coordinate,index){
                         var line = turf.lineString(coordinate);
                         var bbox = turf.bbox(line);
-                        var poly = turf.multiPolygon([coordinate], {name: 'Polygon'})
+                        var poly = turf.polygon([coordinate], {name: 'Polygon'})
                         var count = 0
+                        var sep =','
                         while (count < feature.properties.POPULATION) {
                             var points = turf.randomPoint(feature.properties.POPULATION, {bbox: bbox})
                             Object.values(points.features).forEach(function (each_point, index) {
@@ -43,7 +43,8 @@ module.exports = randomPointInPoly = function(bg_json){
                                 if (inside) {
                                     if (count < feature.properties.POPULATION) {
                                         each_point.properties['i'] = count + 1
-                                        updated_geojson.features.push(each_point);
+                                        wstream.write(JSON.stringify(each_point))
+                                        wstream.write(',')
                                         count = count + 1
                                     }
                                 }
@@ -55,7 +56,6 @@ module.exports = randomPointInPoly = function(bg_json){
                 }
             }
             else{
-                console.log('if multipolygon false')
                 feature.geometry.coordinates.forEach(function (item,index) {
                     var line = turf.lineString(item);
                     var bbox = turf.bbox(line);
@@ -70,7 +70,8 @@ module.exports = randomPointInPoly = function(bg_json){
                             if (inside) {
                                 if (count < feature.properties.POPULATION ){
                                     each_point.properties['i'] = count+1
-                                    updated_geojson.features.push(each_point);
+                                    wstream.write(JSON.stringify(each_point))
+                                    wstream.write(',')
                                     count = count+1
                                 }
                             }
@@ -81,16 +82,12 @@ module.exports = randomPointInPoly = function(bg_json){
 
 
         })
-    return updated_geojson
 
+    return null
 }
 
 var result = randomPointInPoly(bg_json)
-fs.writeFile("ny_whole.geojson",JSON.stringify(result),function(err){
-    if (err){
-        console.log(err)
-    }
-})
+wstream.end()
 
 
 
