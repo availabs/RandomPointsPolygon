@@ -22,6 +22,7 @@ module.exports = randomPointInPoly = function(bg_json){
 
         bg_json.forEach(function(feature){
             if (feature.geometry.type === 'MultiPolygon') {
+                console.log('if its Multipolygon')
                 for (var i = 0; i < feature.geometry.coordinates.length; i++) {
                     var polygon = {
                         'type': 'Polygon',
@@ -33,7 +34,6 @@ module.exports = randomPointInPoly = function(bg_json){
                         var bbox = turf.bbox(line);
                         var poly = turf.polygon([coordinate], {name: 'Polygon'})
                         var count = 0
-                        var sep =','
                         while (count < feature.properties.POPULATION) {
                             var points = turf.randomPoint(feature.properties.POPULATION, {bbox: bbox})
                             Object.values(points.features).forEach(function (each_point, index) {
@@ -56,6 +56,7 @@ module.exports = randomPointInPoly = function(bg_json){
                 }
             }
             else{
+                console.log('if its polygon')
                 feature.geometry.coordinates.forEach(function (item,index) {
                     var line = turf.lineString(item);
                     var bbox = turf.bbox(line);
